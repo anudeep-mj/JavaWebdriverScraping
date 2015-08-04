@@ -1,5 +1,7 @@
 package mainpack;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -16,20 +18,53 @@ import org.testng.collections.Lists;
 
 public class ScrapingNew {
 	
+	private String firstname = "";
+	private String lastname = "";
+	private String midname = "";
+	
 	public static void getLocations(String docName, WebDriver driver){
 		WebElement table =driver.findElement(By.xpath("//table[@class='styled drlocations']"));
 		WebElement locationRows = table.findElement(By.tagName("tbody"));
 		List<WebElement> rows=locationRows.findElements(By.tagName("tr"));
 		System.out.println("Number of locations: "+rows.size());
-				
+		
+		List<String> AddressesWithPhList = new ArrayList<String>();
+		List<String> LocationsList = new ArrayList<String>();
+		
+		Map<String, String> LocationsMap = new HashMap<String, String>();
+		
 		for(int i=1;i<=rows.size();i++){
 			WebElement columnLocation = locationRows.findElement(By.xpath("//table[@class='styled drlocations']/tbody/tr["+ i +"]/td"));
-			System.out.println("Location: "+ columnLocation.getText());
+//			System.out.println("Location: "+ columnLocation.getText());
+			LocationsList.add(columnLocation.getText());
 			WebElement columnAddress = locationRows.findElement(By.xpath("//table[@class='styled drlocations']/tbody/tr["+ i +"]/td[2]"));
-			System.out.println("Address: "+ columnAddress.getText());
+//			System.out.println("Address: "+ columnAddress.getText());
+			AddressesWithPhList.add(columnAddress.getText());
+			LocationsMap.put(columnLocation.getText(), columnAddress.getText());
 		}
+		
+		System.out.println("Locations: " + LocationsList);
+		System.out.println("Addresses with phone numbers: "+ AddressesWithPhList);
+//		parseAddress(AddressesWithPhList);
 	}
 	
+	private static Object parseAddress(List<String> addressesWithPhList) {
+		// TODO Auto-generated method stub
+		Iterator<String> iter = addressesWithPhList.iterator();
+		String addressElement = "";
+		while(iter.hasNext()){
+			String tempAddr = iter.next();
+			addressElement = tempAddr.substring(0, tempAddr.indexOf('('));
+			String[] addressElements = addressElement.split(",");
+			String zipPlusState = addressElements[addressElements.length-1];
+			String[] zipPlusStateList = zipPlusState.split(" ");
+		}
+		
+		return null;
+		
+	}
+
+
 	public static void getBio(String docName, WebDriver driver){
 //		WebElement bioTable = driver.findElement(By.xpath("//*[@id='item2']"));
 		WebElement bioTable = driver.findElement(By.id("item2"));
@@ -95,7 +130,7 @@ public class ScrapingNew {
 				keyValue = removeWhiteSpaces(keyValue);
 				if(keyValue.equals("")){
 					iter.remove();
-				}		
+				}
 			}
 			//add final list of values with key to the map
 			
@@ -153,8 +188,9 @@ public class ScrapingNew {
 	}
 	/**
 	 * @param args
+	 * @throws IOException 
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
 		WebDriver driver = new FirefoxDriver();
 		driver.get("http://www.parkview.com/en/ppg/Pages/Find-a-PPG-Doctor.aspx");
@@ -176,11 +212,52 @@ public class ScrapingNew {
 //      List<WebElement> tr_collection=locationAddressTable.findElements(By.xpath("className('styled drlocations')/tbody/tr"));
 		System.out.println("Ronald Baker, MD");
 		String docName = "Ronald Baker, MD";
+		
+		String MDorDO = MDorDONameParse(docName);
+		System.out.println("MDorDO:" + MDorDO);
+		DocNameParse(docName);
+
+//		Map<String, String> LocationsMap = getLocations(docName, driver);
+//		Map<String, List<String>> parsedBio = getBio(docName, driver);
+//		List<String> parsedSpecialities = getSpecialities(docName, driver);
 		getLocations(docName, driver);
 		getBio(docName, driver);
 		getSpecialities(docName, driver);
 		
+		FileWriter writer = new FileWriter("C:\\Users\\Anudeep\testJava.csv");
 		
+	}
+
+	private static void DocNameParse(String docName) {
+		// TODO Auto-generated method stub
+		String fullName = docName.split(",")[0];
+		String[] fullNameSplit = fullName.split(" ");
+//		System.out.println(fullNameSplit[1]);
+		String fname = "";
+		String lname = "";
+		String mname = "";
+		if(fullNameSplit.length == 2){
+			fname = fullNameSplit[0];
+			lname = fullNameSplit[1];
+		}
+		else{
+			fname = fullNameSplit[0];
+			mname = fullNameSplit[1];
+			lname = fullNameSplit[2];
+		}
+		
+	}
+
+	private static String MDorDONameParse(String docName) {
+		// TODO Auto-generated method stub
+		String[] docNameParseArray = docName.split(",");
+		String MDorDO = docNameParseArray[docNameParseArray.length-1];
+//		System.out.println("MDorDO string: "+ MDorDO);
+		removeWhiteSpaces(MDorDO);
+		if(MDorDO.equals(" MD"))
+			return "MD";
+		else
+			return "DO";
 	}
 
 }
